@@ -28,7 +28,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 import matplotlib.gridspec as gridspec
-from matplotlib.patches import Polygon
+import matplotlib.patches as patches
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets, QtGui
@@ -38,6 +38,8 @@ from .project import Project
 from .settings import GRONDSOORTEN, SONDERINGEN_MAP, BORINGEN_MAP
 from .helpers import case_insensitive_glob
 from .soilinvestigation import SoilInvestigation, SoilInvestigationEnum
+from .cpt import CPT
+from .borehole import Borehole
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -61,6 +63,7 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         self._canvas = None  
 
         self.project = Project()
+        self.soilinvestigations = []
         self.current_location_index = -1
         self._init()
         self._connect()
@@ -85,10 +88,6 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         # find all cpt and borehole files
         cpt_files = case_insensitive_glob(SONDERINGEN_MAP, ".gef")
         borehole_files = case_insensitive_glob(BORINGEN_MAP, ".gef")
-
-        print(len(cpt_files))
-        print(len(borehole_files))
-
         self.pbarMain.setMaximum(len(cpt_files) + len(borehole_files))
 
         sis = []
@@ -115,9 +114,24 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.current_location_index < 0:
             return
 
+        self._clear_figure()
+
+        self.soilinvestigations = []                
+        loc = self.project.locations[self.current_location_index]
+
         if len(self.project.soilinvestigations) == 0:
             QtWidgets.QMessageBox.warning(self, "HDSR tool", "Er is geen grondonderzoek gevonden, heb je 'update grondonderzoek' uitgevoerd?")     
-            return       
+            return      
+
+        # use project to find the closest ones
+        sis = self.project.get_closest(loc.x_rd, loc.y_rd, max_distance=self.spSearchDistance.value())
+
+        if len(sis) == 0:
+            QtWidgets.QMessageBox.warning(self, "HDSR tool", "Er is geen grondonderzoek gevonden, verruim de zoekafstand.")     
+            return      
+
+        self.soilinvestigations = sis
+        self._update_figure()   
 
     def onPbFirstClicked(self):
         if self.project.has_locations:
@@ -189,3 +203,55 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
             box = QgsRectangle(location.x_rd - 100, location.y_rd - 100, location.x_rd + 100, location.y_rd + 100)
             self.iface.mapCanvas().setExtent(box)
             self.iface.mapCanvas().refresh()
+
+    
+    def _clear_figure(self):
+        self._figure.clear() 
+        self._canvas.draw()
+
+    def _update_figure(self):
+        self._figure.clear()        
+
+        axs = []
+        for i in range(4):
+            if i > 0:
+                axs.append(self._figure.add_subplot(141+i, sharey=axs[0]))
+            else:
+                axs.append(self._figure.add_subplot(141+i))
+        
+        for i, msi in enumerate(self.soilinvestigations):
+            dist, si = msi[0], msi[1]
+            if si.stype == SoilInvestigationEnum.CPT:                
+                try:
+                    cpt = CPT.from_file(si.filename)
+                    axs[i].title.set_text(f"{cpt.name} ({int(dist)}m)")
+                    axs[i].plot(cpt.qc, cpt.z, 'k-')                    
+                    fss = [fs * 100 for fs in cpt.fs]
+                    axs[i].plot(fss, cpt.z, 'g--')                    
+                    axs[i].set_xlim(0, 30)
+                    axs[i].grid(axis="both")
+                except:
+                    pass
+            else:
+                try:
+                    borehole = Borehole.from_file(si.filename)                    
+                    axs[i].title.set_text(f"{borehole.name} ({int(dist)}m)")
+
+                    for soillayer in borehole.soillayers:
+                        axs[i].add_patch(
+                            patches.Rectangle(
+                                (0.1, soillayer.z_bottom),
+                                0.8,
+                                soillayer.height,
+                                fill=False,
+                                facecolor="#000",
+                            )                        
+                        )
+                        axs[i].text(0.1, soillayer.z_bottom + 0.1, soillayer.soilcode)
+                        
+                except Exception as e:
+                    print(e)
+                    pass
+                
+        
+        self._canvas.draw()

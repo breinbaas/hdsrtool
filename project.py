@@ -1,7 +1,9 @@
 from pydantic import BaseModel
 from pathlib import Path
 from typing import List
+import math
 
+from .cpt import CPT
 from .soiltype import SoilType
 from .location import Location
 from .soilinvestigation import SoilInvestigation, SoilInvestigationEnum
@@ -23,6 +25,11 @@ class Project(BaseModel):
     def boreholes(self):
         return [si for si in self.soilinvestigations if si.stype == SoilInvestigationEnum.BOREHOLE]
 
+    def get_closest(self, x_rd: float, y_rd: float, max_distance=1e9, num=4):
+        locs = [(math.hypot(si.x_rd - x_rd, si.y_rd - y_rd), si) for si in self.soilinvestigations]
+        locs = [l for l in locs if l[0] < max_distance]
+        return sorted(locs, key=lambda x:x[0])[:num]
+    
     def reset(self):
         self.locations = []
     
