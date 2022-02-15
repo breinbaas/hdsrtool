@@ -35,12 +35,13 @@ from qgis.PyQt import QtWidgets, QtGui
 from qgis.core import QgsRectangle
 
 from .project import Project
-from .settings import GRONDSOORTEN
+from .settings import GRONDSOORTEN, SONDERINGEN_MAP, BORINGEN_MAP
+from .helpers import case_insensitive_glob
+from .soilinvestigation import SoilInvestigation, SoilInvestigationEnum
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'hdsr_tool_dialog_base.ui'))
-
 
 class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, iface, parent=None):
@@ -67,9 +68,6 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
     def _init(self):
         self.project.soiltypes_from_csvstring(GRONDSOORTEN)
         self._updateUI()
-
-
-
         # setup matplotlib figure
         
 
@@ -80,10 +78,46 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         self.pbNext.clicked.connect(self.onPbNextClicked)
         self.pbLast.clicked.connect(self.onPbLastClicked)
         self.pbStart.clicked.connect(self.onPbStartClicked)
+        self.pbUpdate.clicked.connect(self.onPbUpdateClicked)
+
+    def onPbUpdateClicked(self):
+        self.pbarMain.setValue(0)
+        # find all cpt and borehole files
+        cpt_files = case_insensitive_glob(SONDERINGEN_MAP, ".gef")
+        borehole_files = case_insensitive_glob(BORINGEN_MAP, ".gef")
+
+        print(len(cpt_files))
+        print(len(borehole_files))
+
+        self.pbarMain.setMaximum(len(cpt_files) + len(borehole_files))
+
+        sis = []
+        for i, cptfile in enumerate(cpt_files):
+            self.pbarMain.setValue(i)
+            si = SoilInvestigation.from_file(cptfile)
+            if si is not None: 
+                si.stype = SoilInvestigationEnum.CPT # todo, kan ook uit GEF gelezen worden maar omdat GEF niet altijd betrouwbaar is maar even zo gedaan
+                sis.append(si)
+            
+        for boreholefile in borehole_files:
+            self.pbarMain.setValue(self.pbarMain.value() + 1)
+            si = SoilInvestigation.from_file(boreholefile)
+
+            if si is not None:
+                si.stype = SoilInvestigationEnum.BOREHOLE
+                sis.append(si)
+        
+        self.project.soilinvestigations = sis
+        self.pbarMain.setValue(0)
+        QtWidgets.QMessageBox.information(self, "HDSR tool", f"Er zijn {len(self.project.cpts)} sonderingen en {len(self.project.boreholes)} boringen gevonden") 
 
     def onPbStartClicked(self):
-        pass
-        
+        if self.current_location_index < 0:
+            return
+
+        if len(self.project.soilinvestigations) == 0:
+            QtWidgets.QMessageBox.warning(self, "HDSR tool", "Er is geen grondonderzoek gevonden, heb je 'update grondonderzoek' uitgevoerd?")     
+            return       
 
     def onPbFirstClicked(self):
         if self.project.has_locations:
@@ -111,7 +145,6 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         # which happens if you initialize the figure in the constructor so we now create this 
         # figure after opening the locations file which happens definitely after the creation of the GUI
         if self._figure is None:
-            print('busy')
             layout = QtWidgets.QVBoxLayout(self.frameMain)
             self._figure = Figure()
             self._figure.set_tight_layout(True)

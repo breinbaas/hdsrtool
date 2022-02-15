@@ -4,16 +4,24 @@ from typing import List
 
 from .soiltype import SoilType
 from .location import Location
+from .soilinvestigation import SoilInvestigation, SoilInvestigationEnum
 
 class Project(BaseModel):
     soiltypes: List[SoilType] = []
     locations: List[Location] = []
-
-
+    soilinvestigations: List[SoilInvestigation] = []
 
     @property
     def has_locations(self):
         return len(self.locations) > 0
+
+    @property
+    def cpts(self):
+        return [si for si in self.soilinvestigations if si.stype == SoilInvestigationEnum.CPT]
+
+    @property
+    def boreholes(self):
+        return [si for si in self.soilinvestigations if si.stype == SoilInvestigationEnum.BOREHOLE]
 
     def reset(self):
         self.locations = []

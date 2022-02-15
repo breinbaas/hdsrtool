@@ -260,6 +260,20 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="pbUpdate">
+         <property name="text">
+          <string>Update grondonderzoek</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QProgressBar" name="pbarMain">
+         <property name="value">
+          <number>0</number>
+         </property>
+        </widget>
+       </item>
+       <item>
         <spacer name="horizontalSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
