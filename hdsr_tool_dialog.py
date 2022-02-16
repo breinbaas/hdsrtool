@@ -26,7 +26,7 @@ import os
 from pathlib import Path
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
+from matplotlib.figure import Figure, MouseButton
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
 
@@ -60,7 +60,7 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # workaround matplotlib bug
         self._figure = None   
-        self._canvas = None  
+        self._canvas = None        
 
         self.project = Project()
         self.soilinvestigations = []
@@ -71,7 +71,8 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
     def _init(self):
         self.project.soiltypes_from_csvstring(GRONDSOORTEN)
         self._updateUI()
-        # setup matplotlib figure
+        self.tableWidget.setColumnCount(3)
+        self.tableWidget.setHorizontalHeaderLabels(["bovenzijde", "onderzijde", "grondsoort"])          
         
 
     def _connect(self):
@@ -82,6 +83,10 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         self.pbLast.clicked.connect(self.onPbLastClicked)
         self.pbStart.clicked.connect(self.onPbStartClicked)
         self.pbUpdate.clicked.connect(self.onPbUpdateClicked)
+        self.pbReset.clicked.connect(self.onPbResetClicked)
+
+    def onPbResetClicked(self):
+        self.tableWidget.setRowCount(0)
 
     def onPbUpdateClicked(self):
         self.pbarMain.setValue(0)
@@ -163,6 +168,7 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
             self._figure = Figure()
             self._figure.set_tight_layout(True)
             self._canvas = FigureCanvas(self._figure)        
+            self._figure.canvas.mpl_connect('button_press_event', self.onFigureMouseClicked)
             layout.addWidget(self._canvas)
 
         filename = QtWidgets.QFileDialog.getOpenFileName(self, 'Load Locations File', "", "csv files (*.csv)")[0]
@@ -182,9 +188,50 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         
         self._afterUpdateLocation()
 
+    def onFigureMouseClicked(self, e):
+        if self.current_location_index < 0 or len(self.soilinvestigations) == 0:
+            return
+
+        if e.button == MouseButton.RIGHT:
+            self.remove_last_from_table()            
+        elif e.button == MouseButton.LEFT:
+            self.add_to_table(e.ydata)
+            
+
+    def add_to_table(self, value: float):
+        nrows = self.tableWidget.rowCount()
+        lastvalue = None
+        if nrows > 0:
+            item = self.tableWidget.item(nrows-1, 1)
+            if item is not None:
+                lastvalue = float(self.tableWidget.item(nrows-1, 1).text())
+
+        if nrows == 0: # first entry
+            self.tableWidget.setRowCount(1)
+            self.tableWidget.setItem(0, 0, QtWidgets.QTableWidgetItem(f"{value:.2f}"))
+            return
+                    
+        if lastvalue is None: # fill in the bottom value                         
+            self.tableWidget.setItem(self.tableWidget.rowCount()-1, 1, QtWidgets.QTableWidgetItem(f"{value:.2f}"))                
+        else: # create a new row and add the top from the previous line and the bottom from the clicked point
+            self.tableWidget.setRowCount(self.tableWidget.rowCount() + 1)
+            self.tableWidget.setItem(self.tableWidget.rowCount()-1, 0, QtWidgets.QTableWidgetItem(f"{lastvalue}"))
+            self.tableWidget.setItem(self.tableWidget.rowCount()-1, 1, QtWidgets.QTableWidgetItem(f"{value:.2f}"))
+
+        cbSoillayers = QtWidgets.QComboBox()
+        cbSoillayers.addItems([st.name for st in self.project.soiltypes])
+        self.tableWidget.setCellWidget(self.tableWidget.rowCount()-1,2,cbSoillayers)        
+
+    def remove_last_from_table(self):
+        if self.tableWidget.rowCount() > 0:
+            self.tableWidget.setRowCount(self.tableWidget.rowCount()-1)
+    
     def _afterUpdateLocation(self):
         if self.current_location_index > -1:
             self.lblLocation.setText(self.project.locations[self.current_location_index].name)
+            self._clear_figure()
+            self.tableWidget.setRowCount(0)
+            self.soilinvestigations = []
             self._goto()
         else:
             self.lblLocation.setText('geen locaties opgegeven')
@@ -251,7 +298,6 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
                         
                 except Exception as e:
                     print(e)
-                    pass
-                
+                    pass                
         
         self._canvas.draw()
