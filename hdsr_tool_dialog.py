@@ -258,7 +258,7 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
             self.tableWidget.setRowCount(self.tableWidget.rowCount()-1)    
     
     def _save_location_soillayers(self, index):
-        if index > -1:        
+        if index > -1 and index < len(self.project.locations)-1:        
             self.project.locations[index].soillayers = []
             if self.tableWidget.rowCount() > 0:
                 for i in range(self.tableWidget.rowCount()):
