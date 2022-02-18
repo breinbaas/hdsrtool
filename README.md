@@ -10,7 +10,7 @@ Tool to define soillayers based on given locations and the closest soil investig
 
 [x] opslaan bij bladeren
 
-[ ] bij bladeren ophalen grondonderzoek (TESTEN!)
+[x] bij bladeren ophalen grondonderzoek **geimplementeerd als keuze via checkbox voor als het te langzaam wordt (bij veel grondonderzoek)**
 
 [ ] beschouwen als project en wegschrijven als project (voordeel alles op 1 plek ook waar je gebleven bent)
 

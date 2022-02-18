@@ -116,6 +116,13 @@
                   <item>
                    <layout class="QHBoxLayout" name="horizontalLayout_3">
                     <item>
+                     <widget class="QCheckBox" name="checkboxAuto">
+                      <property name="text">
+                       <string>Automatisch zoeken</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
                      <widget class="QPushButton" name="pbStart">
                       <property name="text">
                        <string>Start</string>

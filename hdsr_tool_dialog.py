@@ -87,10 +87,17 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         self.pbReset.clicked.connect(self.onPbResetClicked)
         self.pbExport.clicked.connect(self.onPbExportClicked)
         self.cbLocations.currentIndexChanged.connect(self.onCbLocationsCurrentIndexChanged)
+        self.checkboxAuto.stateChanged.connect(self.onCheckboxAutoStateChanged)
+
+    def onCheckboxAutoStateChanged(self):
+        self.pbStart.setEnabled(not self.checkboxAuto.isChecked())
+
+        if self.checkboxAuto.isChecked() and self.cbLocations.currentIndex() > -1:
+            self._update_closest_soilinvestigations()
 
     def onCbLocationsCurrentIndexChanged(self):
         # this needs a little explaining...
-        # each time the user clicks on the next, prev etc buttons of selects a location
+        # each time the user clicks on the next, prev etc buttons or selects a location
         # from the combobox this event is called but the index is already changed to 
         # the new combobox index which means that to save the data we have to keep
         # track of the previous one which is stored in self._prev_index so we call
@@ -141,10 +148,8 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         self.pbarMain.setValue(0)
         QtWidgets.QMessageBox.information(self, "HDSR tool", f"Er zijn {len(self.project.cpts)} sonderingen en {len(self.project.boreholes)} boringen gevonden") 
 
-    def onPbStartClicked(self):
-        if self.cbLocations.currentIndex() < 0:
-            return
-
+    
+    def _update_closest_soilinvestigations(self):
         self._clear_figure()
 
         self.soilinvestigations = []                
@@ -162,7 +167,13 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
             return      
 
         self.soilinvestigations = sis
-        self._update_figure()   
+        self._update_figure()
+    
+    def onPbStartClicked(self):
+        if self.cbLocations.currentIndex() < 0:
+            return
+        self._update_closest_soilinvestigations()
+           
 
     def onPbFirstClicked(self):
         if self.project.has_locations:
@@ -285,6 +296,9 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.tableWidget.setCellWidget(i,2,cbSoillayers) 
 
             self.soilinvestigations = []
+
+            if self.checkboxAuto.isChecked():
+                self._update_closest_soilinvestigations()
             self._goto()        
    
     def _updateUI(self):
