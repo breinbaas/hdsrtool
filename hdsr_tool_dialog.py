@@ -40,6 +40,7 @@ from .helpers import case_insensitive_glob
 from .soilinvestigation import SoilInvestigation, SoilInvestigationEnum
 from .cpt import CPT
 from .borehole import Borehole
+from .soillayer import SoilLayer
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -84,9 +85,14 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         self.pbStart.clicked.connect(self.onPbStartClicked)
         self.pbUpdate.clicked.connect(self.onPbUpdateClicked)
         self.pbReset.clicked.connect(self.onPbResetClicked)
+        self.pbExport.clicked.connect(self.onPbExportClicked)
+
+    def onPbExportClicked(self):
+        pass
 
     def onPbResetClicked(self):
         self.tableWidget.setRowCount(0)
+        self._save_location_soillayers()
 
     def onPbUpdateClicked(self):
         self.pbarMain.setValue(0)
@@ -140,21 +146,25 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def onPbFirstClicked(self):
         if self.project.has_locations:
+            self._beforeUpdateLocation()
             self.current_location_index = 0
             self._afterUpdateLocation()
 
     def onPbPreviousClicked(self):
         if self.project.has_locations and self.current_location_index > 0:
+            self._beforeUpdateLocation()
             self.current_location_index -= 1
             self._afterUpdateLocation()
 
     def onPbNextClicked(self):
         if self.project.has_locations and self.current_location_index < len(self.project.locations) - 1:
+            self._beforeUpdateLocation()
             self.current_location_index += 1
             self._afterUpdateLocation()
 
     def onPbLastClicked(self):
         if self.project.has_locations:
+            self._beforeUpdateLocation()
             self.current_location_index = len(self.project.locations) - 1
             self._afterUpdateLocation()
 
@@ -226,11 +236,48 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.tableWidget.rowCount() > 0:
             self.tableWidget.setRowCount(self.tableWidget.rowCount()-1)
     
+    
+    def _save_location_soillayers(self):
+        if self.current_location_index > -1:
+            self.project.locations[self.current_location_index].soillayers = []
+            if self.tableWidget.rowCount() > 0:
+                for i in range(self.tableWidget.rowCount()):
+                    try:
+                        top = float(self.tableWidget.item(i,0).text())
+                        bottom = float(self.tableWidget.item(i,1).text())
+                        name = self.tableWidget.cellWidget(i,2).currentText()          
+                        self.project.locations[self.current_location_index].soillayers.append(SoilLayer(
+                            z_top = top,
+                            z_bottom = bottom,
+                            soilcode = name
+                        ))          
+                    except Exception as e: # log any errors to the python console
+                        print(f"Error trying to save a soillayer to the location; {e}")
+    
+    def _beforeUpdateLocation(self):        
+        self._save_location_soillayers()
+    
     def _afterUpdateLocation(self):
         if self.current_location_index > -1:
-            self.lblLocation.setText(self.project.locations[self.current_location_index].name)
+            location = self.project.locations[self.current_location_index]
+            self.lblLocation.setText(location.name)
             self._clear_figure()
-            self.tableWidget.setRowCount(0)
+            self.tableWidget.setRowCount(len(location.soillayers))
+
+            for i in range(len(location.soillayers)):
+                self.tableWidget.setItem(i, 0, QtWidgets.QTableWidgetItem(f"{location.soillayers[i].z_top:.2f}"))
+                self.tableWidget.setItem(i, 1, QtWidgets.QTableWidgetItem(f"{location.soillayers[i].z_bottom:.2f}"))
+                cbSoillayers = QtWidgets.QComboBox()
+                cbSoillayers.addItems([st.name for st in self.project.soiltypes])
+                try:
+                    index = [st.name for st in self.project.soiltypes].index(location.soillayers[i].soilcode)
+                    cbSoillayers.setCurrentIndex(index)
+                except Exception as e:
+                    cbSoillayers.setCurrentIndex(0)
+                    print(f"Error,could not find soilname '{location.soillayers[i].soilcode}' in the given resources, got error '{e}'")                
+                    
+                self.tableWidget.setCellWidget(i,2,cbSoillayers) 
+
             self.soilinvestigations = []
             self._goto()
         else:
