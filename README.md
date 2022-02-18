@@ -6,7 +6,7 @@ Tool to define soillayers based on given locations and the closest soil investig
 
 [x] export knop schrijft dam invoer, **LET OP schrijft enkel locaties weg waar de grondopbouw gedefinieerd is**
 
-[ ] keuze via listbox / combobox (of waar nog geen opbouw is)
+[x] keuze via listbox / combobox (of waar nog geen opbouw is)
 
 [x] opslaan bij bladeren
 

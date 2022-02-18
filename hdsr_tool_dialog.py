@@ -65,9 +65,9 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.project = Project()
         self.soilinvestigations = []
-        self.current_location_index = -1
         self._init()
         self._connect()
+        self._prev_index = -1
 
     def _init(self):
         self.project.soiltypes_from_csvstring(GRONDSOORTEN)
@@ -86,6 +86,19 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         self.pbUpdate.clicked.connect(self.onPbUpdateClicked)
         self.pbReset.clicked.connect(self.onPbResetClicked)
         self.pbExport.clicked.connect(self.onPbExportClicked)
+        self.cbLocations.currentIndexChanged.connect(self.onCbLocationsCurrentIndexChanged)
+
+    def onCbLocationsCurrentIndexChanged(self):
+        # this needs a little explaining...
+        # each time the user clicks on the next, prev etc buttons of selects a location
+        # from the combobox this event is called but the index is already changed to 
+        # the new combobox index which means that to save the data we have to keep
+        # track of the previous one which is stored in self._prev_index so we call
+        # _save_location_soillayers with the previous index
+        # after that we update the _prev_index and everything is fine
+        self._save_location_soillayers(self._prev_index)
+        self._prev_index = self.cbLocations.currentIndex()
+        self._afterUpdateLocation()
 
     def onPbExportClicked(self):
         filename = QtWidgets.QFileDialog.getSaveFileName(self, 'Save soilprofiles', "soilprofiles.csv", "csv files (*.csv)")[0]
@@ -99,7 +112,7 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def onPbResetClicked(self):
         self.tableWidget.setRowCount(0)
-        self._save_location_soillayers()
+        self._save_location_soillayers(self.cbLocations.currentIndex())
 
     def onPbUpdateClicked(self):
         self.pbarMain.setValue(0)
@@ -129,13 +142,13 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         QtWidgets.QMessageBox.information(self, "HDSR tool", f"Er zijn {len(self.project.cpts)} sonderingen en {len(self.project.boreholes)} boringen gevonden") 
 
     def onPbStartClicked(self):
-        if self.current_location_index < 0:
+        if self.cbLocations.currentIndex() < 0:
             return
 
         self._clear_figure()
 
         self.soilinvestigations = []                
-        loc = self.project.locations[self.current_location_index]
+        loc = self.project.locations[self.cbLocations.currentIndex()]
 
         if len(self.project.soilinvestigations) == 0:
             QtWidgets.QMessageBox.warning(self, "HDSR tool", "Er is geen grondonderzoek gevonden, heb je 'update grondonderzoek' uitgevoerd?")     
@@ -153,28 +166,19 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def onPbFirstClicked(self):
         if self.project.has_locations:
-            self._beforeUpdateLocation()
-            self.current_location_index = 0
-            self._afterUpdateLocation()
+            self.cbLocations.setCurrentIndex(0)            
 
     def onPbPreviousClicked(self):
-        if self.project.has_locations and self.current_location_index > 0:
-            self._beforeUpdateLocation()
-            self.current_location_index -= 1
-            self._afterUpdateLocation()
+        if self.project.has_locations and self.cbLocations.currentIndex()  > 0:
+            self.cbLocations.setCurrentIndex(self.cbLocations.currentIndex() - 1)    
 
     def onPbNextClicked(self):
-        if self.project.has_locations and self.current_location_index < len(self.project.locations) - 1:
-            self._beforeUpdateLocation()
-            self.current_location_index += 1
-            self._afterUpdateLocation()
+        if self.project.has_locations and self.cbLocations.currentIndex() < len(self.project.locations) - 1:
+            self.cbLocations.setCurrentIndex(self.cbLocations.currentIndex() + 1)   
 
     def onPbLastClicked(self):
         if self.project.has_locations:
-            self._beforeUpdateLocation()
-            self.current_location_index = len(self.project.locations) - 1
-            self._afterUpdateLocation()
-
+            self.cbLocations.setCurrentIndex(len(self.project.locations) - 1)
 
     def onPbLocationsClicked(self):
         # this is a workaround a bug from matplotlib which does not allow negative sized figures
@@ -195,18 +199,17 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # first reset the current project
         self.project.reset()
-        self.current_location_index = -1
-
+        self.cbLocations.clear()
+        
         self.project.locations_from_csvfile(filename)
         if len(self.project.locations) > 0:
-            self.current_location_index = 0
-        else:
-            self.current_location_index = -1
+            self.cbLocations.addItems([l.name for l in self.project.locations])            
+            self.cbLocations.setCurrentIndex(0)
         
         self._afterUpdateLocation()
 
     def onFigureMouseClicked(self, e):
-        if self.current_location_index < 0 or len(self.soilinvestigations) == 0:
+        if self.cbLocations.currentIndex() < 0 or len(self.soilinvestigations) == 0:
             return
 
         if e.button == MouseButton.RIGHT:
@@ -241,19 +244,18 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def remove_last_from_table(self):
         if self.tableWidget.rowCount() > 0:
-            self.tableWidget.setRowCount(self.tableWidget.rowCount()-1)
+            self.tableWidget.setRowCount(self.tableWidget.rowCount()-1)    
     
-    
-    def _save_location_soillayers(self):
-        if self.current_location_index > -1:
-            self.project.locations[self.current_location_index].soillayers = []
+    def _save_location_soillayers(self, index):
+        if index > -1:        
+            self.project.locations[index].soillayers = []
             if self.tableWidget.rowCount() > 0:
                 for i in range(self.tableWidget.rowCount()):
                     try:
                         top = float(self.tableWidget.item(i,0).text())
                         bottom = float(self.tableWidget.item(i,1).text())
                         name = self.tableWidget.cellWidget(i,2).currentText()          
-                        self.project.locations[self.current_location_index].soillayers.append(SoilLayer(
+                        self.project.locations[index].soillayers.append(SoilLayer(
                             z_top = top,
                             z_bottom = bottom,
                             soilcode = name
@@ -261,13 +263,10 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
                     except Exception as e: # log any errors to the python console
                         print(f"Error trying to save a soillayer to the location; {e}")
     
-    def _beforeUpdateLocation(self):        
-        self._save_location_soillayers()
-    
     def _afterUpdateLocation(self):
-        if self.current_location_index > -1:
-            location = self.project.locations[self.current_location_index]
-            self.lblLocation.setText(location.name)
+        if self.cbLocations.currentIndex() > -1:
+            location = self.project.locations[self.cbLocations.currentIndex()]
+            self.cbLocations.setCurrentIndex(self.cbLocations.currentIndex())
             self._clear_figure()
             self.tableWidget.setRowCount(len(location.soillayers))
 
@@ -286,9 +285,7 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.tableWidget.setCellWidget(i,2,cbSoillayers) 
 
             self.soilinvestigations = []
-            self._goto()
-        else:
-            self.lblLocation.setText('geen locaties opgegeven')
+            self._goto()        
    
     def _updateUI(self):
         soiltypes = self.project.soiltypes
@@ -299,8 +296,8 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
             self.tableSoiltypes.item(i,1).setBackground(QtGui.QColor(soiltype.color))    
 
     def _goto(self):
-        if self.current_location_index > -1:
-            location = self.project.locations[self.current_location_index]            
+        if self.cbLocations.currentIndex() > -1:
+            location = self.project.locations[self.cbLocations.currentIndex()]            
             box = QgsRectangle(location.x_rd - 100, location.y_rd - 100, location.x_rd + 100, location.y_rd + 100)
             self.iface.mapCanvas().setExtent(box)
             self.iface.mapCanvas().refresh()
