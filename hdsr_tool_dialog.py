@@ -88,7 +88,14 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         self.pbExport.clicked.connect(self.onPbExportClicked)
 
     def onPbExportClicked(self):
-        pass
+        filename = QtWidgets.QFileDialog.getSaveFileName(self, 'Save soilprofiles', "soilprofiles.csv", "csv files (*.csv)")[0]
+
+        if filename == "":
+            return
+        
+        self.project.export_to_dam(filename)
+        QtWidgets.QMessageBox.information(self, "HDSR tool", f"Grondopbouw weggeschreven naar bestand '{filename}'") 
+
 
     def onPbResetClicked(self):
         self.tableWidget.setRowCount(0)

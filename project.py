@@ -57,4 +57,17 @@ class Project(BaseModel):
                 except: # log errors to the Python console in QGis
                     print(f"Could not read location from line '{line}'")
 
+    def export_to_dam(self, filename: str):
+        f = open(filename, 'w')
+        f.write("soilprofile_id;top_level;soil_name\n")
+        for location in self.locations:
+            if len(location.soillayers) == 0:
+                continue
+            for i, soillayer in enumerate(location.soillayers):
+                if i==0:
+                    z = 10.0
+                else:
+                    z = soillayer.z_top
+                f.write(f"{location.name};{z:.2f};{soillayer.soilcode}\n")
+        f.close()
 

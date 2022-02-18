@@ -4,7 +4,7 @@ Tool to define soillayers based on given locations and the closest soil investig
 
 ## todo list based on priority
 
-[ ] export knop -> schrijft dan soil...csv DAM invoer
+[x] export knop schrijft dam invoer, **LET OP schrijft enkel locaties weg waar de grondopbouw gedefinieerd is**
 
 [ ] keuze via listbox / combobox (of waar nog geen opbouw is)
 
