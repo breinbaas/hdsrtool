@@ -62,12 +62,12 @@ class Project(BaseModel):
             lines = open(filename, 'r').readlines()
 
             for line in lines[1:]:
-                args = [s.strip() for s in line.split(',')]
+                args = [s.strip() for s in line.split(';')]
                 try:
                     self.locations.append(Location(
                         name = args[0],
-                        x_rd = float(args[1]),
-                        y_rd = float(args[2])
+                        x_rd = float(args[1].replace(',','.')),
+                        y_rd = float(args[2].replace(',','.'))
                     ))
                 except: # log errors to the Python console in QGis
                     print(f"Could not read location from line '{line}'")
