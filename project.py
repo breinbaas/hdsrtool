@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from pathlib import Path
 from typing import List
 import math
+import json
 
 from .cpt import CPT
 from .soiltype import SoilType
@@ -12,6 +13,15 @@ class Project(BaseModel):
     soiltypes: List[SoilType] = []
     locations: List[Location] = []
     soilinvestigations: List[SoilInvestigation] = []
+
+    @classmethod
+    def from_file(obj, filename: str) -> 'Project':
+        try:
+            return Project.parse_file(filename)
+        except Exception as e:
+            print(f"Could not read project file, got error '{e}'")
+
+        return None
 
     @property
     def has_locations(self):
@@ -25,6 +35,11 @@ class Project(BaseModel):
     def boreholes(self):
         return [si for si in self.soilinvestigations if si.stype == SoilInvestigationEnum.BOREHOLE]
 
+    def save(self, filename):
+        f = open(filename, 'w')
+        f.write(json.dumps(self.dict()))
+        f.close()
+    
     def get_closest(self, x_rd: float, y_rd: float, max_distance=1e9, num=4):
         locs = [(math.hypot(si.x_rd - x_rd, si.y_rd - y_rd), si) for si in self.soilinvestigations]
         locs = [l for l in locs if l[0] < max_distance]
@@ -70,4 +85,6 @@ class Project(BaseModel):
                     z = soillayer.z_top
                 f.write(f"{location.name};{z:.2f};{soillayer.soilcode}\n")
         f.close()
+
+
 

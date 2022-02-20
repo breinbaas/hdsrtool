@@ -88,6 +88,41 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         self.pbExport.clicked.connect(self.onPbExportClicked)
         self.cbLocations.currentIndexChanged.connect(self.onCbLocationsCurrentIndexChanged)
         self.checkboxAuto.stateChanged.connect(self.onCheckboxAutoStateChanged)
+        self.pbLoad.clicked.connect(self.onPbLoadClicked)
+        self.pbSave.clicked.connect(self.onPbSaveClicked)
+
+    def onPbLoadClicked(self):
+        # because of the bug in matplot lib this is a fix to couple the figure to the canvas
+        # if the bug is fixed this code should be added to the initialization part
+        # of the plugin
+        if self._figure is None:
+            layout = QtWidgets.QVBoxLayout(self.frameMain)
+            self._figure = Figure()
+            self._figure.set_tight_layout(True)
+            self._canvas = FigureCanvas(self._figure)        
+            self._figure.canvas.mpl_connect('button_press_event', self.onFigureMouseClicked)
+            layout.addWidget(self._canvas)
+
+        filename = QtWidgets.QFileDialog.getOpenFileName(self, 'Load project file', "", "json files (*.json)")[0]
+        if filename == "":
+            return
+        try:
+            self.project = Project.from_file(filename)            
+        except Exception as e:
+            self.project = Project()
+
+        self._updateUI()
+        self.cbLocations.clear()        
+        if len(self.project.locations) > 0:
+            self.cbLocations.addItems([l.name for l in self.project.locations])            
+            self.cbLocations.setCurrentIndex(0)        
+        self._afterUpdateLocation()
+
+    def onPbSaveClicked(self):
+        filename = QtWidgets.QFileDialog.getSaveFileName(self, 'Save project file', "project.json", "json files (*.json)")[0]
+
+        if filename != "":
+            self.project.save(filename)
 
     def onCheckboxAutoStateChanged(self):
         self.pbStart.setEnabled(not self.checkboxAuto.isChecked())
@@ -258,7 +293,7 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
             self.tableWidget.setRowCount(self.tableWidget.rowCount()-1)    
     
     def _save_location_soillayers(self, index):
-        if index > -1 and index < len(self.project.locations)-1:        
+        if index > -1 and index < len(self.project.locations):        
             self.project.locations[index].soillayers = []
             if self.tableWidget.rowCount() > 0:
                 for i in range(self.tableWidget.rowCount()):
