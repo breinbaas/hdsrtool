@@ -20,7 +20,7 @@ Tool to define soillayers based on given locations and the closest soil investig
 
 [x] afkappen grondsoort Kzs_
 
-[ ] friction ratio toevoegen
+[x] friction ratio toevoegen
 
 [x] optioneel, meer grondonderzoek toestaan (check dynamische grafiek)
 
