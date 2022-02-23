@@ -68,6 +68,7 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         self._init()
         self._connect()
         self._prev_index = -1
+        self.num_soilinvestigations_to_show = 4
 
     def _init(self):
         self.project.soiltypes_from_csvstring(GRONDSOORTEN)
@@ -90,6 +91,10 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         self.checkboxAuto.stateChanged.connect(self.onCheckboxAutoStateChanged)
         self.pbLoad.clicked.connect(self.onPbLoadClicked)
         self.pbSave.clicked.connect(self.onPbSaveClicked)
+        self.spNumSoilinvestigations.valueChanged.connect(self.onSpNumSoilinvestigationsValueChanged)
+
+    def onSpNumSoilinvestigationsValueChanged(self):
+        self.num_soilinvestigations_to_show = self.spNumSoilinvestigations.value()
 
     def onPbLoadClicked(self):
         # because of the bug in matplot lib this is a fix to couple the figure to the canvas
@@ -195,7 +200,7 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
             return      
 
         # use project to find the closest ones
-        sis = self.project.get_closest(loc.x_rd, loc.y_rd, max_distance=self.spSearchDistance.value())
+        sis = self.project.get_closest(loc.x_rd, loc.y_rd, max_distance=self.spSearchDistance.value(), num=self.num_soilinvestigations_to_show)
 
         if len(sis) == 0:
             QtWidgets.QMessageBox.warning(self, "HDSR tool", "Er is geen grondonderzoek gevonden, verruim de zoekafstand.")     
@@ -360,11 +365,12 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         self._figure.clear()        
 
         axs = []
-        for i in range(4):
+        num = 101 + len(self.soilinvestigations) * 10 # this will create the second number of the subplot which are the num of columns
+        for i in range(len(self.soilinvestigations)):
             if i > 0:
-                axs.append(self._figure.add_subplot(141+i, sharey=axs[0]))
+                axs.append(self._figure.add_subplot(num+i, sharey=axs[0]))
             else:
-                axs.append(self._figure.add_subplot(141+i))
+                axs.append(self._figure.add_subplot(num+i))
         
         for i, msi in enumerate(self.soilinvestigations):
             dist, si = msi[0], msi[1]

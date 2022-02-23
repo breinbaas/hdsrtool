@@ -14,7 +14,7 @@ Tool to define soillayers based on given locations and the closest soil investig
 
 [x] beschouwen als project en wegschrijven als project (voordeel alles op 1 plek ook waar je gebleven bent)
 
-[ ] hoofdgrondsoort van lagen in boring in kleur geven (zand, veen, klei)
+[x] hoofdgrondsoort van lagen in boring in kleur geven (zand, veen, klei)
 
 [ ] laag weergave in alpha=0.2 en optioneel via checkbox
 
