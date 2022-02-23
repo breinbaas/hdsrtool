@@ -394,7 +394,7 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
                                 facecolor="#000",
                             )                        
                         )
-                        axs[i].text(0.1, soillayer.z_bottom + 0.1, soillayer.soilcode)
+                        axs[i].text(0.1, soillayer.z_bottom + 0.1, soillayer.short_soilcode)
                         
                 except Exception as e:
                     print(e)
