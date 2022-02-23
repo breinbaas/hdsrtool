@@ -127,6 +127,9 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         self._afterUpdateLocation()
 
     def onPbSaveClicked(self):
+        if self.cbLocations.currentIndex() > -1:
+            self._save_location_soillayers(self.cbLocations.currentIndex())
+            
         filename = QtWidgets.QFileDialog.getSaveFileName(self, 'Save project file', "project.json", "json files (*.json)")[0]
 
         if filename != "":
@@ -151,6 +154,8 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
         self._afterUpdateLocation()
 
     def onPbExportClicked(self):
+        if self.cbLocations.currentIndex() > -1:
+            self._save_location_soillayers(self.cbLocations.currentIndex())
         filename = QtWidgets.QFileDialog.getSaveFileName(self, 'Save soilprofiles', "soilprofiles.csv", "csv files (*.csv)")[0]
 
         if filename == "":

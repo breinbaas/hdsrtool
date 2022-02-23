@@ -24,9 +24,9 @@ Tool to define soillayers based on given locations and the closest soil investig
 
 [x] optioneel, meer grondonderzoek toestaan (check dynamische grafiek)
 
-[ ] afkappen grondsoort Kzs_
+[x] afkappen grondsoort Kzs_
 
-[ ] friction ratio toevoegen
+[x] friction ratio toevoegen
 
 [ ] gebruik pygef voor visualisatie
 
