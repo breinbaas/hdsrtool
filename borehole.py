@@ -10,6 +10,13 @@ from .soillayer import SoilLayer
 GEF_COLUMN_TOP = 1
 GEF_COLUMN_BOTTOM = 2
 
+BOREHOLE_COLORS = {
+    'N': '#8d9991',
+    'K': '#38cf47',
+    'V': '#826012',
+    'Z': '#dfe62e',
+}
+
 class Borehole(BaseModel):
     x: float = 0.0
     y: float = 0.0

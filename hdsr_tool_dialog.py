@@ -39,7 +39,7 @@ from .settings import GRONDSOORTEN, SONDERINGEN_MAP, BORINGEN_MAP
 from .helpers import case_insensitive_glob
 from .soilinvestigation import SoilInvestigation, SoilInvestigationEnum
 from .cpt import CPT
-from .borehole import Borehole
+from .borehole import Borehole, BOREHOLE_COLORS
 from .soillayer import SoilLayer
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
@@ -385,13 +385,18 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
                     axs[i].title.set_text(f"{borehole.name} ({int(dist)}m)")
 
                     for soillayer in borehole.soillayers:
+                        if len(soillayer.short_soilcode) > 0 and soillayer.short_soilcode[0] in BOREHOLE_COLORS.keys():
+                            color = BOREHOLE_COLORS[soillayer.short_soilcode[0]]
+                        else:
+                            color = "#ccccc8"
                         axs[i].add_patch(
                             patches.Rectangle(
                                 (0.1, soillayer.z_bottom),
                                 0.8,
                                 soillayer.height,
-                                fill=False,
-                                facecolor="#000",
+                                fill=True,                                    
+                                facecolor=color,
+                                edgecolor="#000"
                             )                        
                         )
                         axs[i].text(0.1, soillayer.z_bottom + 0.1, soillayer.short_soilcode)
