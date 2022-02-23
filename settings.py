@@ -1,5 +1,5 @@
-SONDERINGEN_MAP="D:/Documents/mlas/hdsr/grondonderzoek/sonderingen"
-BORINGEN_MAP="D:/Documents/mlas/hdsr/grondonderzoek/boringen"
+SONDERINGEN_MAP="D:/Documents/hdsr/sonderingen"
+BORINGEN_MAP="D:/Documents/hdsr/boringen"
 GRONDSOORTEN = """
 zand,#fcba03
 veen,#825316

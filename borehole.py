@@ -1,8 +1,6 @@
 from pydantic import BaseModel
 from typing import List
 from pathlib import Path
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
@@ -151,7 +149,7 @@ class Borehole(BaseModel):
                 raise ValueError(f"Error reading xyid '{line}' -> error {e}")
         elif keyword == "ZID":
             try:
-                assert len(args) == 3 # avoids a situation where #ZID= 0, -1,24, 0.01 leads to a z of -1 due to the erronous comma in 1,24 (should be 1.24)
+                assert len(args) >= 2 # avoids a situation where #ZID= 0, -1,24, 0.01 leads to a z of -1 due to the erronous comma in 1,24 (should be 1.24)
                 self.z_top = float(args[1].strip())
             except Exception as e:
                 raise ValueError(f"Error reading zid '{line}' -> error {e}")     
