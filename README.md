@@ -24,7 +24,9 @@ Tool to define soillayers based on given locations and the closest soil investig
 
 [x] optioneel, meer grondonderzoek toestaan (check dynamische grafiek)
 
-[ ] laag weergave in alpha=0.2 en optioneel via checkbox
+[ ] afkappen grondsoort Kzs_
+
+[ ] friction ratio toevoegen
 
 [ ] gebruik pygef voor visualisatie
 
