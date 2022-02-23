@@ -14,11 +14,17 @@ Tool to define soillayers based on given locations and the closest soil investig
 
 [x] beschouwen als project en wegschrijven als project (voordeel alles op 1 plek ook waar je gebleven bent)
 
+[x] inlezen boringen
+
 [x] hoofdgrondsoort van lagen in boring in kleur geven (zand, veen, klei)
 
-[ ] laag weergave in alpha=0.2 en optioneel via checkbox
+[x] afkappen grondsoort Kzs_
 
-[ ] optioneel, meer grondonderzoek toestaan (check dynamische grafiek)
+[ ] friction ratio toevoegen
+
+[x] optioneel, meer grondonderzoek toestaan (check dynamische grafiek)
+
+[ ] laag weergave in alpha=0.2 en optioneel via checkbox
 
 [ ] gebruik pygef voor visualisatie
 
