@@ -10,7 +10,8 @@
 
 ### openstaande problemen - niet perse plugin gerelateerd
 
-* onderzoeksdata die niet klopt (bv B31G0109 (dm ipv m)) vervormd de grafieken
+* onderzoeksdata die niet klopt (bv B31G0109 (dm ipv m)) vervormd de grafieken (oplossing.. bestand aanpassen of weggooien)
 * de grondsoorten tab heeft geen funtie nu
+
 
 

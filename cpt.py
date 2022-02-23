@@ -13,9 +13,6 @@ from enum import IntEnum
 
 from pydantic.utils import KeyType
 
-RF_MAX = 10.
-QC_MAX = 50.
-
 GEF_COLUMN_Z = 1
 GEF_COLUMN_QC = 2
 GEF_COLUMN_FS = 3
@@ -244,6 +241,12 @@ class CPT(BaseModel):
             if fs <= 0:
                 fs = 1e-6
             self.fs.append(fs)
+
+            if fs > 0:
+                rf = (fs / qc) * 100.0
+            else:
+                rf = 10.0
+            self.Rf.append(rf)
 
             if ucolumn > -1:
                 self.u.append(args[ucolumn])

@@ -46,6 +46,9 @@ from .soillayer import SoilLayer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'hdsr_tool_dialog_base.ui'))
 
+QC_MAX = 10.0
+RF_MAX = 10.0
+
 class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, iface, parent=None):
         """Constructor."""
@@ -378,11 +381,12 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
                 try:
                     cpt = CPT.from_file(si.filename)
                     axs[i].title.set_text(f"{cpt.name} ({int(dist)}m)")
-                    axs[i].plot(cpt.qc, cpt.z, 'k-')                    
-                    fss = [fs * 100 for fs in cpt.fs]
-                    axs[i].plot(fss, cpt.z, 'g--')                    
-                    axs[i].set_xlim(0, 30)
+                    qcs = [min(qc, QC_MAX) for qc in cpt.qc]
+                    axs[i].plot(qcs, cpt.z, 'k-')                    
+                    rfs = [min(rf, RF_MAX) for rf in cpt.Rf]
+                    axs[i].plot(rfs, cpt.z, 'g--') 
                     axs[i].grid(axis="both")
+                    axs[i].set_xlim(0, QC_MAX)
                 except:
                     pass
             else:
