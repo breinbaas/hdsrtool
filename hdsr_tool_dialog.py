@@ -24,6 +24,7 @@
 
 import os
 from pathlib import Path
+import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure, MouseButton
@@ -35,7 +36,7 @@ from qgis.PyQt import QtWidgets, QtGui
 from qgis.core import QgsRectangle
 
 from .project import Project
-from .settings import GRONDSOORTEN, SONDERINGEN_MAP, BORINGEN_MAP
+from .settings import GRONDSOORTEN, SONDERINGEN_MAP, BORINGEN_MAP, PLOT_Y_MIN
 from .helpers import case_insensitive_glob
 from .soilinvestigation import SoilInvestigation, SoilInvestigationEnum
 from .cpt import CPT
@@ -387,9 +388,12 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
                     cpt = CPT.from_file(si.filename)
                     axs[i].title.set_text(f"{cpt.name} ({int(dist)}m)")
                     qcs = [min(qc, QC_MAX) for qc in cpt.qc]
-                    axs[i].plot(qcs, cpt.z, 'k-')                    
+
+                    zs = [z for z in cpt.z if z > PLOT_Y_MIN]
+
+                    axs[i].plot(qcs[:len(zs)], zs, 'k-')                    
                     rfs = [min(rf, RF_MAX) for rf in cpt.Rf]
-                    axs[i].plot(rfs, cpt.z, 'g--') 
+                    axs[i].plot(rfs[:len(zs)], zs, 'g--') 
                     axs[i].grid(axis="both")
                     axs[i].set_xlim(0, QC_MAX)
                 except:
@@ -400,6 +404,13 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
                     axs[i].title.set_text(f"{borehole.name} ({int(dist)}m)")
 
                     for soillayer in borehole.soillayers:
+                        if soillayer.z_top < PLOT_Y_MIN:
+                            break
+
+                        if soillayer.z_bottom < PLOT_Y_MIN:
+                            soillayer.z_bottom = PLOT_Y_MIN
+
+
                         if len(soillayer.short_soilcode) > 0 and soillayer.short_soilcode[0] in BOREHOLE_COLORS.keys():
                             color = BOREHOLE_COLORS[soillayer.short_soilcode[0]]
                         else:
@@ -418,6 +429,6 @@ class HDSRToolDialog(QtWidgets.QDialog, FORM_CLASS):
                         
                 except Exception as e:
                     print(e)
-                    pass                
-        
+                    pass     
+
         self._canvas.draw()
